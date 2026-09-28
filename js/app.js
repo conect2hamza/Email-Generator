@@ -1081,7 +1081,10 @@
     document.addEventListener('click', function (event) {
       var t = event.target.closest('[data-action], [data-open], [data-copy], [data-var], [data-tpl-action]');
       if (!t || t.disabled) return;
-      if (t.hasAttribute('data-action') && t.getAttribute('data-action') === 'choose-file') {
+      if (t.getAttribute('data-action') === 'download-template') {
+        var name = ROG.exporter.downloadTemplate();
+        ui.announce('Downloaded ' + name);
+      } else if (t.getAttribute('data-action') === 'choose-file') {
         // The file input lives outside the dialogs, which make the rest of the page inert.
         var openDialogEl = document.querySelector('dialog[open]');
         if (openDialogEl) openDialogEl.close();

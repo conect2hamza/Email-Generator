@@ -258,6 +258,20 @@
     ].join('\n')
   };
 
+  // Example rows for the downloadable CSV template, in PROSPECT_VARS order.
+  // "Last Review" omits "ago" because the default template adds it.
+  var TEMPLATE_EXAMPLES = [
+    ['ABC Roofing', 'John Carter', 'john@abcroofing.example', '555-201-3344', '12 Oak St', 'Springfield', 'IL', '62701',
+      'https://abcroofing.example', '87', '3 weeks', '2', 'https://g.page/r/abc-roofing/review'],
+    ['XYZ Plumbing', '', 'info@xyzplumbing.example', '555-310-8890', '440 Main St', 'Springfield', 'IL', '62702',
+      'https://xyzplumbing.example', '42', '1 month', '0', '']
+  ];
+
+  /** Header row (one column per standard variable) plus example rows. */
+  function csvTemplateRows() {
+    return [PROSPECT_VARS.map(function (v) { return v.label; })].concat(TEMPLATE_EXAMPLES);
+  }
+
   ROG.template = {
     PROSPECT_VARS: PROSPECT_VARS,
     SENDER_VARS: SENDER_VARS,
@@ -268,6 +282,7 @@
     customVariables: customVariables,
     render: render,
     cleanValue: cleanValue,
-    slugify: slugify
+    slugify: slugify,
+    csvTemplateRows: csvTemplateRows
   };
 })((window.ROG = window.ROG || {}));

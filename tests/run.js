@@ -135,4 +135,16 @@ test('default template matches the spec', () => {
   assert.ok(t.body.endsWith('{{my_name}}\n{{my_company}}\n{{my_phone}}'));
 });
 
+console.log('CSV template');
+test('template headers cover and auto-map every standard variable', () => {
+  const rows = template.csvTemplateRows();
+  const m = template.autoMap(rows[0]);
+  template.PROSPECT_VARS.forEach((v, i) => assert.strictEqual(m[v.name], i, v.name));
+  rows.slice(1).forEach((r) => assert.strictEqual(r.length, rows[0].length));
+});
+test('samples/review-outreach-template.csv matches the in-app template', () => {
+  const file = fs.readFileSync(path.join(__dirname, '..', 'samples', 'review-outreach-template.csv'), 'utf8');
+  assert.strictEqual(file, csv.stringify(template.csvTemplateRows()));
+});
+
 console.log('\n' + passed + ' passed' + (process.exitCode ? ', some FAILED' : ''));

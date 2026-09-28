@@ -65,8 +65,15 @@
     return name;
   }
 
+  function downloadTemplate() {
+    var name = 'review-outreach-template.csv';
+    download(name, ROG.csv.stringify(ROG.template.csvTemplateRows()));
+    return name;
+  }
+
   ROG.exporter = {
     buildRows: buildRows,
-    exportRecords: exportRecords
+    exportRecords: exportRecords,
+    downloadTemplate: downloadTemplate
   };
 })((window.ROG = window.ROG || {}));

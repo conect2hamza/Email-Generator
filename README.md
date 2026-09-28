@@ -15,6 +15,16 @@ It has no build step and no dependencies.
 
 Try it with `samples/sample-prospects.csv`.
 
+### CSV template
+
+To start your own list, use **Download CSV template** (on the upload card or under **CSV**), or copy `samples/review-outreach-template.csv`. The template has one column for each prospect variable, and every column maps automatically:
+
+```text
+Business Name,Owner Name,Email,Phone,Address,City,State,ZIP,Website,Total Reviews,Last Review,Reviews Last Month,Review Link
+```
+
+Delete the two example rows before you add your own. You can leave out columns you don't need, and you can add your own columns (e.g. `Category`, which becomes `{{category}}`).
+
 ## Features
 
 - CSV import by file picker or drag and drop. Supports quoted fields, embedded commas and newlines, and comma, semicolon or tab delimiters. UTF-8 is the default, with a Windows-1252 fallback.
@@ -54,7 +64,7 @@ js/export.js        CSV export and download
 js/ui.js            DOM helpers (safe text rendering, clipboard, dialogs)
 js/app.js           State and event wiring
 assets/logo.svg     Logo / favicon
-samples/            Example CSV
+samples/            Example data and the blank CSV template
 tests/run.js        Logic tests (node tests/run.js)
 ```
 
