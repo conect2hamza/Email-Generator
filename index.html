@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="description" content="Generate personalized review-outreach emails from a CSV. Your data is processed locally in your browser.">
+  <title>Review Outreach Generator</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to main content</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="" width="28" height="28">
+      <span class="brand-name">Review Outreach Generator</span>
+    </div>
+    <nav class="topnav" aria-label="Main">
+      <button type="button" class="nav-btn" data-open="csvDialog">CSV</button>
+      <button type="button" class="nav-btn" data-open="templatesDialog">Templates</button>
+      <button type="button" class="nav-btn" data-open="settingsDialog">Settings</button>
+    </nav>
+  </header>
+
+  <main id="main" class="workspace">
+    <!-- Records -->
+    <section class="panel panel-records" id="recordsPanel" aria-labelledby="recordsTitle">
+      <div class="panel-head">
+        <h2 id="recordsTitle">Records</h2>
+        <span id="recordCount" class="muted small"></span>
+      </div>
+
+      <div id="loadError" class="alert alert-error" role="alert" hidden></div>
+
+      <div id="dropzone" class="dropzone">
+        <p class="dz-title">Upload CSV</p>
+        <p>Drag &amp; drop your CSV here</p>
+        <p class="muted">or</p>
+        <button type="button" class="btn btn-primary" data-action="choose-file">Choose CSV File</button>
+        <p class="muted small">Supported format: CSV</p>
+        <p class="privacy-note small">Your CSV data is processed locally in your browser. No prospect data is uploaded to a server.</p>
+      </div>
+
+      <input type="file" id="fileInput" accept=".csv,text/csv" class="visually-hidden" tabindex="-1" aria-hidden="true">
+
+      <div id="recordsLoaded" class="records-loaded" hidden>
+        <div class="file-info">
+          <div class="file-info-text">
+            <div class="loaded-line"><span class="check" aria-hidden="true">✓</span> <strong id="loadedText"></strong></div>
+            <div id="fileName" class="muted small file-name"></div>
+          </div>
+          <div class="file-actions">
+            <button type="button" class="btn btn-small" data-open="csvDialog">Column mapping</button>
+            <button type="button" class="btn btn-small" data-action="choose-file">Replace CSV</button>
+          </div>
+        </div>
+        <p id="mappingSummary" class="small mapping-summary"></p>
+        <ul id="loadWarnings" class="load-warnings small" hidden></ul>
+
+        <label for="search" class="visually-hidden">Search businesses</label>
+        <input type="search" id="search" class="input search" placeholder="Search businesses..." autocomplete="off">
+
+        <div class="table-wrap" id="tableWrap">
+          <table class="records-table">
+            <caption class="visually-hidden">Imported records. Select a record to preview its email.</caption>
+            <thead>
+              <tr>
+                <th scope="col" class="c-num" data-sort-col="index"><button type="button" class="sort-btn" data-sort="index">#</button></th>
+                <th scope="col" class="c-biz" data-sort-col="business"><button type="button" class="sort-btn" data-sort="business">Business</button></th>
+                <th scope="col" class="c-rev" data-sort-col="reviews"><button type="button" class="sort-btn" data-sort="reviews">Reviews</button></th>
+                <th scope="col" class="c-status" data-sort-col="status"><button type="button" class="sort-btn" data-sort="status">Status</button></th>
+              </tr>
+            </thead>
+            <tbody id="recordsBody"></tbody>
+          </table>
+          <p id="noResults" class="empty-state small" hidden>No matching records.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Template editor -->
+    <section class="panel panel-editor" aria-labelledby="editorTitle">
+      <div class="panel-head">
+        <h2 id="editorTitle">Template</h2>
+        <span id="dirtyFlag" class="dirty-flag small" hidden>Unsaved changes</span>
+      </div>
+
+      <div class="template-bar">
+        <label for="templateSelect" class="visually-hidden">Saved template</label>
+        <select id="templateSelect" class="input select"></select>
+        <button type="button" class="btn btn-small" id="saveTemplateBtn">Save</button>
+        <button type="button" class="btn btn-small" id="saveAsTemplateBtn">Save as…</button>
+      </div>
+
+      <label for="subjectInput" class="field-label">Subject</label>
+      <input type="text" id="subjectInput" class="input" autocomplete="off">
+
+      <label for="bodyInput" class="field-label">Message</label>
+      <textarea id="bodyInput" class="input textarea" rows="16"></textarea>
+
+      <div class="variables" role="group" aria-labelledby="insertLabel">
+        <p id="insertLabel" class="field-label">Insert variable <span class="muted small">at the cursor</span></p>
+        <div id="variableGroups"></div>
+      </div>
+    </section>
+
+    <!-- Preview -->
+    <section class="panel panel-preview" aria-labelledby="previewTitle">
+      <div class="panel-head">
+        <h2 id="previewTitle">Preview</h2>
+        <div class="segmented" role="group" aria-label="Preview mode">
+          <button type="button" class="seg-btn" data-mode="email" aria-pressed="true">Email</button>
+          <button type="button" class="seg-btn" data-mode="plain" aria-pressed="false">Plain text</button>
+        </div>
+      </div>
+
+      <div id="previewWarnings" class="preview-warnings"></div>
+
+      <p id="previewEmpty" class="empty-state">Please upload a CSV file to continue.</p>
+
+      <article id="emailView" class="email-card" aria-label="Email preview" hidden>
+        <dl class="email-meta">
+          <div class="meta-row"><dt>To</dt><dd id="pvTo"></dd></div>
+          <div class="meta-row"><dt>Subject</dt><dd id="pvSubject" class="pv-subject"></dd></div>
+        </dl>
+        <div id="pvBody" class="email-body"></div>
+      </article>
+
+      <div id="plainView" class="plain-view" hidden>
+        <label for="plainText" class="visually-hidden">Plain text email</label>
+        <textarea id="plainText" class="input textarea plain-text" readonly></textarea>
+      </div>
+    </section>
+  </main>
+
+  <!-- Record actions -->
+  <div class="actionbar" role="region" aria-label="Record actions">
+    <div class="action-group nav-group">
+      <button type="button" class="btn" id="prevBtn" aria-keyshortcuts="ArrowLeft">← Previous</button>
+      <div class="position">
+        <div id="currentName" class="current-name">No record selected</div>
+        <div id="currentPos" class="muted small">0 of 0</div>
+      </div>
+      <button type="button" class="btn" id="nextBtn" aria-keyshortcuts="ArrowRight">Next →</button>
+    </div>
+
+    <div class="action-group copy-group">
+      <button type="button" class="btn" data-copy="subject">Copy Subject</button>
+      <button type="button" class="btn" data-copy="message">Copy Message</button>
+      <button type="button" class="btn btn-primary" data-copy="full">Copy Full Email</button>
+    </div>
+
+    <div class="action-group status-group">
+      <label for="statusSelect" class="small muted">Status</label>
+      <select id="statusSelect" class="input select status-select">
+        <option value="Pending">Pending</option>
+        <option value="Ready">Ready</option>
+        <option value="Sent">Sent</option>
+      </select>
+    </div>
+
+    <div class="action-group export-group">
+      <button type="button" class="btn" id="exportCurrentBtn">Export Current</button>
+      <button type="button" class="btn" id="exportAllBtn">Export All</button>
+    </div>
+  </div>
+
+  <div id="liveRegion" class="visually-hidden" aria-live="polite"></div>
+
+  <!-- CSV & mapping dialog -->
+  <dialog id="csvDialog" class="dialog dialog-wide" aria-labelledby="csvDialogTitle">
+    <form method="dialog" class="dialog-inner">
+      <div class="dialog-head">
+        <h2 id="csvDialogTitle">CSV &amp; column mapping</h2>
+        <button type="submit" class="icon-btn" value="close" aria-label="Close">×</button>
+      </div>
+      <div class="dialog-body">
+        <div id="csvDialogFile" class="csv-file-row"></div>
+        <p class="privacy-note small">Your CSV data is processed locally in your browser. No prospect data is uploaded to a server.</p>
+        <div id="mappingSection" hidden>
+          <h3 class="section-title">Column mapping</h3>
+          <p class="muted small">Choose which CSV column fills each variable. Recognizable columns are mapped automatically.</p>
+          <div class="mapping-table-wrap">
+            <table class="mapping-table">
+              <thead>
+                <tr><th scope="col">Variable</th><th scope="col">CSV column</th><th scope="col">Current record</th></tr>
+              </thead>
+              <tbody id="mappingBody"></tbody>
+            </table>
+          </div>
+          <div id="customVarsInfo" class="small"></div>
+        </div>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" class="btn" id="resetMappingBtn">Reset to auto-detected</button>
+        <button type="submit" class="btn btn-primary" value="close">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Templates dialog -->
+  <dialog id="templatesDialog" class="dialog" aria-labelledby="templatesDialogTitle">
+    <form method="dialog" class="dialog-inner">
+      <div class="dialog-head">
+        <h2 id="templatesDialogTitle">Templates</h2>
+        <button type="submit" class="icon-btn" value="close" aria-label="Close">×</button>
+      </div>
+      <div class="dialog-body">
+        <ul id="templateList" class="template-list"></ul>
+        <p id="templateListEmpty" class="empty-state small" hidden>No saved templates yet.</p>
+      </div>
+      <div class="dialog-foot">
+        <button type="button" class="btn" id="restoreDefaultBtn" hidden>Restore “Review Outreach”</button>
+        <button type="button" class="btn" id="dialogSaveAsBtn">Save current as new…</button>
+        <button type="submit" class="btn btn-primary" value="close">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Settings dialog -->
+  <dialog id="settingsDialog" class="dialog" aria-labelledby="settingsDialogTitle">
+    <form method="dialog" class="dialog-inner" id="settingsForm">
+      <div class="dialog-head">
+        <h2 id="settingsDialogTitle">Settings</h2>
+        <button type="submit" class="icon-btn" value="close" aria-label="Close">×</button>
+      </div>
+      <div class="dialog-body">
+        <h3 class="section-title">Sender information</h3>
+        <p class="muted small">Used for <code>{{my_name}}</code>, <code>{{my_company}}</code>, <code>{{my_phone}}</code>, <code>{{my_email}}</code> and <code>{{my_website}}</code>. Saved in this browser only.</p>
+        <div class="form-grid">
+          <label class="form-field"><span>My Name</span><input class="input" type="text" name="name" autocomplete="name"></label>
+          <label class="form-field"><span>My Company</span><input class="input" type="text" name="company" autocomplete="organization"></label>
+          <label class="form-field"><span>My Phone</span><input class="input" type="tel" name="phone" autocomplete="tel"></label>
+          <label class="form-field"><span>My Email</span><input class="input" type="email" name="email" autocomplete="email"></label>
+          <label class="form-field form-field-full"><span>My Website</span><input class="input" type="text" name="website" autocomplete="url"></label>
+        </div>
+
+        <h3 class="section-title">Empty values</h3>
+        <label class="form-field form-field-full">
+          <span>Text to use when a CSV value is empty</span>
+          <input class="input" type="text" name="fallback" placeholder="Leave blank to omit (e.g. [Not available])">
+        </label>
+
+        <h3 class="section-title">Privacy</h3>
+        <p class="small">Your CSV data is processed locally in your browser. No prospect data is uploaded to a server. Settings, templates and record statuses are stored in this browser’s local storage.</p>
+        <button type="button" class="btn btn-danger" id="clearDataBtn">Clear Local Data</button>
+      </div>
+      <div class="dialog-foot">
+        <span id="settingsSaved" class="muted small" aria-live="polite"></span>
+        <button type="submit" class="btn btn-primary" value="close">Done</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Name prompt (save as / rename) -->
+  <dialog id="nameDialog" class="dialog dialog-narrow" aria-labelledby="nameDialogTitle">
+    <form method="dialog" class="dialog-inner" id="nameForm">
+      <div class="dialog-head">
+        <h2 id="nameDialogTitle">Template name</h2>
+      </div>
+      <div class="dialog-body">
+        <label class="form-field form-field-full">
+          <span>Name</span>
+          <input class="input" type="text" id="nameInput" maxlength="80" autocomplete="off">
+        </label>
+        <p id="nameError" class="field-error small" role="alert" hidden></p>
+      </div>
+      <div class="dialog-foot">
+        <button type="submit" class="btn" value="cancel" formnovalidate>Cancel</button>
+        <button type="submit" class="btn btn-primary" value="ok" id="nameSubmit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="js/csv.js"></script>
+  <script src="js/template.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/export.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
